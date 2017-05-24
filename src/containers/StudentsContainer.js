@@ -1,39 +1,47 @@
 import React, { Component } from 'react'
 
-import StudentList from '../components/StudentList'
-import StudentForm from '../components/StudentForm'
+import StudentsApp from '../components/StudentsApp'
 
-import { fetchStudents, createStudent }  from '../api'
+
+import { fetchStudents, createStudent, deleteStudent, updateStudent }  from '../api'
 
 class StudentsContainer extends Component {
 
   constructor(){
     super()
     this.state = {
-      names: []
+      students: []
     }
-
   }
 
-  componentDidMount(){
+  componentDidMount(prevProps, prevS){
     fetchStudents()
-      .then( data => this.setState({
-        names: data.map(student => student.name )
+      .then( students => this.setState({
+        students: students
       }) )
   }
 
   handleAddStudent(name){
-    this.setState( prevState =>  ({ names: [...prevState.names, name] }) )
     createStudent(name)
-      .catch(e => this.setState(prevState => ({names: prevState.names.filter(person => person !== name)})))
+    .then( student => this.setState( prevState =>  ({ students: [...prevState.students, student] }) ))
+      .catch(e => console.log(e))
+  }
+
+  handleDelete(event, student){
+    deleteStudent(student.id)
+    .then(this.setState( prevState => ({ students: prevState.students.filter( scott => scott !== student) })))
+    this.props.history.push('/students')
+  }
+
+  handleUpdate(student){
+    updateStudent(student)
+    .then(updatedStudent => this.setState(prevState => ({students: prevState.students.map(student => student.id === updatedStudent.id ? updatedStudent : student ) }) ) )
+    this.props.history.push(`/students/${student.id}`)
   }
 
   render(){
     return (
-      <div>
-        < StudentList students={this.state.names} />
-        < StudentForm  onSubmit={ this.handleAddStudent.bind(this) }/>
-      </div>
+        < StudentsApp students={this.state.students} onDelete={this.handleDelete.bind(this)} onUpdate={this.handleUpdate.bind(this)} onSubmit={this.handleAddStudent.bind(this)} />
     )
   }
 }
